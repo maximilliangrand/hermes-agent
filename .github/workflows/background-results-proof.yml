@@ -29,12 +29,16 @@ jobs:
           HERMES_TEST_FILE_RETRIES: "0"
         run: |
           filter="not TestSystemdCgroupIsolation"
+          registry_tests="tests/tools/test_process_registry.py"
           if [[ "$RUNNER_OS" == "Linux" ]]; then
             filter=""
           fi
+          if [[ "$RUNNER_OS" == "Windows" ]]; then
+            registry_tests="tests/tools/test_process_registry_windows_live.py"
+          fi
           scripts/run_tests.sh -j 2 \
             tests/tools/test_completed_process_results.py \
-            tests/tools/test_process_registry.py \
+            "$registry_tests" \
             tests/tools/test_oneshot_completion_linger.py \
             tests/tools/test_terminal_yield_to_background.py \
             tests/tools/test_process_wait_clarity.py \
