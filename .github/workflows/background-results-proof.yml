@@ -1,0 +1,43 @@
+name: Background results proof
+
+on:
+  push:
+    branches: [ci/durable-background-results]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # 8.2.0
+        with:
+          version: "0.9.28"
+      - run: uv sync --locked --python 3.11 --extra dev
+      - name: Verify headless recovery and process regressions
+        env:
+          HERMES_TEST_FILE_RETRIES: "0"
+        run: |
+          filter="not TestSystemdCgroupIsolation"
+          if [[ "$RUNNER_OS" == "Linux" ]]; then
+            filter=""
+          fi
+          scripts/run_tests.sh -j 2 \
+            tests/tools/test_completed_process_results.py \
+            tests/tools/test_process_registry.py \
+            tests/tools/test_oneshot_completion_linger.py \
+            tests/tools/test_terminal_yield_to_background.py \
+            tests/tools/test_process_wait_clarity.py \
+            tests/tools/test_process_schema_diet.py \
+            tests/gateway/test_async_delivery_capability.py \
+            -k "$filter" --tb=short
